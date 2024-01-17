@@ -1,4 +1,6 @@
-# MMM-plex-recently-added
+Forked from gyran/MMM-plex-posters to add additional functionality: options to show posters from more than just Recently Added.
+
+# MMM-plex-posters
 
 Shows posters of the recently added items for your Plex Media Server.
 
@@ -11,7 +13,7 @@ Shows posters of the recently added items for your Plex Media Server.
 
 ```
 {
-     module: 'MMM-plex-recently-added',
+     module: 'MMM-plex-posters',
      position: 'bottom_bar',
      config: {
         token: 'X-PLEX-TOKEN',

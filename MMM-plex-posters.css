@@ -1,0 +1,44 @@
+.MMM-plex-posters {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  color: #fff;
+  list-style: none;
+  padding: 0;
+  display: block;
+}
+
+.MMM-plex-posters .module-content {
+  height:100%;
+  width:100%;
+}
+
+.MMM-plex-posters .poster {
+  height: 100%;
+  width:100%;
+  display:block;
+}
+
+.MMM-plex-posters .metadata {
+  padding-top: 5px;
+  font-size: 5em;
+  line-height: 1.2em;
+  text-decoration:wavy;
+  text-align: right;
+}
+
+.MMM-plex-posters .metadata div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.MMM-plex-posters .item .movie .title,
+.MMM-plex-posters .item .episode .grandparentTitle,
+.MMM-plex-posters .item .season .parentTitle {
+  font-weight: 600;
+}
+
+.fullscreen.below .container { 
+  height:100%;
+}

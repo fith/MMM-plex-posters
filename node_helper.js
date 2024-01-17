@@ -12,6 +12,7 @@ const Notifications = {
   CONFIG: 'CONFIG',
   DATA: 'DATA',
   ERROR: 'ERROR',
+  PRINT: 'PRINT',
 };
 
 const Types = {
@@ -22,7 +23,7 @@ const Types = {
 
 const PlexTypes = {
   [Types.MOVIE]: '1',
-  [Types.TV]: '2',
+  // [Types.TV]: '2',
 };
 
 const fetchData = (url) => {
@@ -79,6 +80,10 @@ module.exports = NodeHelper.create({
       // Process fetch for the first time
       this.process();
     }
+    if (notification === Notifications.PRINT && !this.client) {
+      Log.info("MODULE DEBUG PRINT:")
+      Log.info(payload)
+    }
   },
 
   scheduleNextFetch(delayMs) {
@@ -86,26 +91,25 @@ module.exports = NodeHelper.create({
 
     this.updateTimer = setTimeout(() => {
       this.process();
-    }, Math.max(delayMs, TEN_MINUTES_MS));
+    }, Math.max(delayMs, ONE_DAY_MS));
   },
 
   async process() {
     try {
-      const plexItemsByType = await Promise.all(
-        Object.values(PlexTypes).map((plexType) =>
-          this.fetchFromPlex(plexType),
-        ),
-      );
-      const items = plexItemsByType.flat();
-
-      for (const type of this.config.types) {
-        const typeItems = items.filter((item) => item.type === type);
-        this.sendSocketNotification(Notifications.DATA, {
-          type,
-          items: typeItems.slice(0, this.config.limit),
-        });
+      Log.info(`Starting processing.`);
+      var notificationQueue = []
+      for (const t of this.config.types) {
+        var sectionIds = await this.fetchLibrarySectionIds(t);
+        var videos = await this.fetchSectionVideos(sectionIds);
+        notificationQueue.push(this.sendSocketNotification(Notifications.DATA, {
+          type: t,
+          items: videos,
+        }))
       }
+      await Promise.all(notificationQueue)
+      Log.info(`Finished processing.`);
     } catch (error) {
+      Log.info(`Error processing.`);
       Log.error(error);
       this.sendSocketNotification(Notifications.ERROR, {
         error: error.message,
@@ -116,32 +120,34 @@ module.exports = NodeHelper.create({
     this.scheduleNextFetch(this.config.updateIntervalInMinute * ONE_MINUTE_MS);
   },
 
-  async fetchFromPlex(plexType) {
+  async fetchSectionVideos(sectionId) {
     const url = new URL(
-      `http://${this.config.hostname}:${this.config.port}/hubs/home/recentlyAdded`,
+      `http://${this.config.hostname}:${this.config.port}/library/sections/${sectionId}/all`,
     );
-    url.searchParams.append('type', plexType);
     if (this.config.token) {
       url.searchParams.append('X-Plex-Token', this.config.token);
     }
-
     Log.info(`${this.name}: fetching ${url}`);
+    const data = await fetchData(url);
+    const items = data.MediaContainer.Metadata
+    return items
+  },
 
+  async fetchLibrarySectionIds(type) {
+    const url = new URL(
+      `http://${this.config.hostname}:${this.config.port}/library/sections`,
+    );
+    if (this.config.token) {
+      url.searchParams.append('X-Plex-Token', this.config.token);
+    }
+    Log.info(`${this.name}: fetching ${url}`);
     const data = await fetchData(url);
 
-    const now = new Date();
-    let newerThanDate =
-      this.config.newerThanDay > 0
-        ? new Date(now.getTime() - this.config.newerThanDay * ONE_DAY_MS)
-        : new Date(0);
-
-    const items = data.MediaContainer.Metadata.filter((item) => {
-      const itemAddedDate = new Date(item.addedAt * 1000);
-
-      return itemAddedDate >= newerThanDate;
-    });
-
-    Log.info(`${this.name}: found ${items.length} items for type ${plexType}`);
-    return items;
+    var libraryDirectory = data.MediaContainer.Directory
+    var sections =  libraryDirectory.filter( (section) => {
+      return section.type == type
+    })
+    var sectionIds = sections.map(function(value,index) { return value.key; })
+    return sectionIds
   },
 });

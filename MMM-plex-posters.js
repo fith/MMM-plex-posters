@@ -18,15 +18,15 @@ const pluralizeInterval = (interval, word) => {
   return `${floored} ${word}${floored !== 1 ? 's' : ''}`;
 };
 
-Module.register('MMM-plex-recently-added', {
-  recentlyAdded: {},
+Module.register('MMM-plex-posters', {
+  videos: [],
 
   defaults: {
     updateIntervalInMinute: 60,
-    types: ['movie', 'episode', 'season'],
+    types: ['movie'],
     displayTimeAgo: false,
     displayType: DisplayTypes.MIXED,
-    limit: 20,
+    limit: 500,
     token: '',
     newerThanDay: 0,
     hostname: '127.0.0.1',
@@ -39,33 +39,30 @@ Module.register('MMM-plex-recently-added', {
   },
 
   socketNotificationReceived: function (notification, payload) {
-    Log.info(`${this.name}: socketNotificationReceived`);
+    Log.info(`${this.name}: socketNotificationReceived ${notification}`);
+    Log.info("moors");
+
+    this.sendSocketNotification('PRINT', notification);
     if (notification === Notifications.DATA) {
-      this.recentlyAdded[payload.type] = payload.items;
+      this.sendSocketNotification('PRINT', "GABBA GOOL");
+      this.videos = this.videos.concat(payload.items);
+      
       this.updateDom();
     } else if (notification === Notifications.ERROR) {
-      Log.error(`${this.name}:`, payload.error);
+      Log.info(`${this.name}:`, payload.error);
     }
   },
 
   getStyles: function () {
-    return ['MMM-plex-recently-added.css'];
+    return ['MMM-plex-posters.css'];
   },
 
   getDom() {
-    const displayType = this.config.displayType;
-
-    if (Object.keys(this.recentlyAdded).length) {
-      if (displayType === DisplayTypes.MIXED) {
-        return this.getMixedDisplayDom();
-      }
-
-      if (displayType === DisplayTypes.SEPARATE) {
-        return this.getSeperateDisplayDom();
-      }
+    if (this.videos.length > 0) {
+        return this.getPosterDom();
     }
 
-    return this.getMessageDom('loading...');
+    return this.getMessageDom("Loading...");
   },
 
   getMessageDom(message) {
@@ -75,44 +72,26 @@ Module.register('MMM-plex-recently-added', {
     return wrapper;
   },
 
-  async getMixedDisplayDom() {
-    const types = this.config.types;
-    const wrapper = document.createElement('div');
+  async getPosterDom() {
+    var item = this.videos[Math.floor(Math.random()*this.videos.length)];
+    
+    // const itemDom = document.createElement('div');
+    // itemDom.classList.add('item');
 
-    // Merge all types to one
-    const items = [];
-    for (const type in types) {
-      const tmp = this.recentlyAdded[types[type]];
-      if (tmp && tmp.length) {
-        items.push(...tmp);
-      }
+    const posterDom = document.createElement('div');
+    posterDom.classList.add('poster');
+
+    const thumbUrl = this.getThumbUrl(item);
+    posterDom.style.backgroundImage = `url(${thumbUrl})`;
+    posterDom.style.backgroundSize = 'cover';
+    // itemDom.appendChild(posterDom);
+
+    const metadataDom = this.getMetadataDom(item);
+    if (metadataDom) {
+      posterDom.appendChild(metadataDom);
     }
 
-    items.sort(function (a, b) {
-      return b.addedAt - a.addedAt;
-    });
-
-    const recentlyAddedListDom = this.getRecentlyAddedListDom(items);
-    if (recentlyAddedListDom) {
-      wrapper.appendChild(recentlyAddedListDom);
-    }
-
-    return wrapper;
-  },
-
-  getSeperateDisplayDom() {
-    const types = this.config.types;
-    const wrapper = document.createElement('div');
-
-    for (const type in types) {
-      const items = this.recentlyAdded[types[type]];
-      const recentlyAddedListDom = this.getRecentlyAddedListDom(items);
-      if (recentlyAddedListDom) {
-        wrapper.appendChild(recentlyAddedListDom);
-      }
-    }
-
-    return wrapper;
+    return posterDom;
   },
 
   getThumbUrl(item) {
@@ -216,7 +195,7 @@ Module.register('MMM-plex-recently-added', {
   },
 
   getItemDom(item) {
-    const itemDom = document.createElement('li');
+    const itemDom = document.createElement('div');
     itemDom.classList.add('item');
 
     const posterDom = document.createElement('div');
@@ -224,32 +203,13 @@ Module.register('MMM-plex-recently-added', {
 
     const thumbUrl = this.getThumbUrl(item);
     posterDom.style.backgroundImage = `url(${thumbUrl})`;
-
     posterDom.style.backgroundSize = 'cover';
     itemDom.appendChild(posterDom);
 
-    const metadataDom = this.getMetadataDom(item);
-    if (metadataDom) {
-      itemDom.appendChild(metadataDom);
-    }
+    // const metadataDom = this.getMetadataDom(item);
+    // if (metadataDom) {
+    //   itemDom.appendChild(metadataDom);
+    // }
     return itemDom;
-  },
-
-  getRecentlyAddedListDom(items) {
-    if (!items || !items.length) {
-      return null;
-    }
-
-    const libraryDom = document.createElement('ul');
-    libraryDom.classList.add('recentlyAddedList');
-
-    const self = this;
-    items.forEach(function (item) {
-      const itemDom = self.getItemDom(item);
-
-      libraryDom.appendChild(itemDom);
-    });
-
-    return libraryDom;
-  },
+  }
 });
