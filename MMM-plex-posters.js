@@ -4,11 +4,6 @@ const Notifications = {
   ERROR: 'ERROR',
 };
 
-const DisplayTypes = {
-  MIXED: 'mixed',
-  SEPARATE: 'separate',
-};
-
 // "dumb" function that just adds an 's'
 // if interval is not 1 when floored.
 // Simplify pluralizing time since etc. "month" "months"
@@ -25,7 +20,6 @@ Module.register('MMM-plex-posters', {
     updateIntervalInMinute: 60,
     types: ['movie'],
     displayTimeAgo: false,
-    displayType: DisplayTypes.MIXED,
     limit: 500,
     token: '',
     newerThanDay: 0,
@@ -40,13 +34,8 @@ Module.register('MMM-plex-posters', {
 
   socketNotificationReceived: function (notification, payload) {
     Log.info(`${this.name}: socketNotificationReceived ${notification}`);
-    Log.info("moors");
-
-    this.sendSocketNotification('PRINT', notification);
     if (notification === Notifications.DATA) {
-      this.sendSocketNotification('PRINT', "GABBA GOOL");
       this.videos = this.videos.concat(payload.items);
-      
       this.updateDom();
     } else if (notification === Notifications.ERROR) {
       Log.info(`${this.name}:`, payload.error);
