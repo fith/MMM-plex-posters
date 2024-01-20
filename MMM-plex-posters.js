@@ -25,6 +25,7 @@ Module.register('MMM-plex-posters', {
     newerThanDay: 0,
     hostname: '127.0.0.1',
     port: '32400',
+    showMetadata: true,
   },
 
   start: function () {
@@ -63,9 +64,6 @@ Module.register('MMM-plex-posters', {
 
   async getPosterDom() {
     var item = this.videos[Math.floor(Math.random()*this.videos.length)];
-    
-    // const itemDom = document.createElement('div');
-    // itemDom.classList.add('item');
 
     const posterDom = document.createElement('div');
     posterDom.classList.add('poster');
@@ -73,11 +71,12 @@ Module.register('MMM-plex-posters', {
     const thumbUrl = this.getThumbUrl(item);
     posterDom.style.backgroundImage = `url(${thumbUrl})`;
     posterDom.style.backgroundSize = 'cover';
-    // itemDom.appendChild(posterDom);
 
-    const metadataDom = this.getMetadataDom(item);
-    if (metadataDom) {
-      posterDom.appendChild(metadataDom);
+    if (this.config.showMetadata) {
+      const metadataDom = this.getMetadataDom(item);
+      if (metadataDom) {
+        posterDom.appendChild(metadataDom);
+      }
     }
 
     return posterDom;
@@ -195,10 +194,10 @@ Module.register('MMM-plex-posters', {
     posterDom.style.backgroundSize = 'cover';
     itemDom.appendChild(posterDom);
 
-    // const metadataDom = this.getMetadataDom(item);
-    // if (metadataDom) {
-    //   itemDom.appendChild(metadataDom);
-    // }
+    const metadataDom = this.getMetadataDom(item);
+    if (metadataDom) {
+      itemDom.appendChild(metadataDom);
+    }
     return itemDom;
   }
 });

@@ -1,4 +1,6 @@
-Forked from gyran/MMM-plex-posters to add additional functionality: options to show posters from more than just Recently Added.
+Forked from gyran/MMM-plex-posters
+Quick-n-dirty hacks to change it to show individual movie posters fullscreen.
+
 
 # MMM-plex-posters
 
